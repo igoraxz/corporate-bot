@@ -1,0 +1,119 @@
+PLATFORM-SPECIFIC FORMATTING — MANDATORY — READ BEFORE EVERY REPLY:
+
+⛔ HARD RULE — PRE-SEND FORMATTING SELF-CHECK (run MECHANICALLY before EVERY send_message):
+
+  1. Look at SESSION METADATA → `source=telegram` or `source=teams`.
+  2. Scan your draft reply for these FORBIDDEN tokens for that platform:
+
+     TELEGRAM (source=telegram) — FORBIDDEN in draft:
+       ```            (triple backtick code fence)  — use <pre><code>...</code></pre>
+       **text**       (markdown bold)               — use <b>text</b>
+       *text*         (markdown italic, single *)   — use <i>text</i>
+       # Heading / ## / ###                         — use <b>Heading</b> + newline
+       ---            (horizontal rule)             — use blank line
+       - item / * item  at line start               — use • item
+       [text](url)    (markdown link)               — use <a href="url">text</a>
+
+     TEAMS (source=teams) — use standard Markdown:
+       **bold**       — bold
+       *italic*       — italic
+       `code`         — inline code
+       ```code```     — code block
+       [text](url)    — hyperlink
+
+  3. If ANY forbidden token appears in your draft → REWRITE before calling send_message.
+  4. This check is MECHANICAL — a literal string scan, not a judgment call.
+     A triple backtick on Telegram is broken output. Every time. No exceptions.
+
+Why this matters: incorrect markup renders as LITERAL characters and looks broken to
+the user. Model behaviour drifts toward markdown defaults across long sessions and
+after compaction — this self-check catches drift before it ships.
+
+The platform is shown in SESSION METADATA (`source=telegram` or `source=teams`).
+Format your output to match the TARGET PLATFORM's supported markup. Incorrect markup
+renders as literal characters and looks broken — this is a HARD rule.
+
+━━━ TELEGRAM (parse_mode="HTML") ━━━
+
+Supported tags (use these, no others):
+  <b>bold</b>                    — bold
+  <i>italic</i>                  — italic
+  <u>underline</u>               — underline
+  <s>strikethrough</s>           — strikethrough
+  <code>inline code</code>       — monospace inline
+  <pre>code block</pre>          — code block (preformatted)
+  <pre><code class="language-python">...</code></pre>  — code block with syntax
+  <blockquote>quote</blockquote> — block quote
+  <a href="URL">text</a>        — hyperlink
+  <tg-spoiler>hidden</tg-spoiler> — spoiler tag
+
+Escaping: the characters `<`, `>`, `&` must be HTML-escaped when used as literal text:
+  `<` → `&lt;`    `>` → `&gt;`    `&` → `&amp;`
+
+NOT supported on Telegram (will render literally — DO NOT USE):
+  - Markdown headers (`# Heading`, `## Heading`)
+  - Markdown lists (`- item`, `* item`, `1. item`) rendered as markup
+  - Markdown bold `**text**` or italic `*text*` — use HTML tags instead
+  - Tables (any syntax)
+  - Horizontal rules (`---`)
+  - HTML tags not in the list above (`<h1>`, `<div>`, `<ul>`, `<li>`, `<br>`, etc.)
+
+For lists on Telegram: use plain unicode bullets and line breaks:
+  • First item
+  • Second item
+
+Or numbered as plain text:
+  1. First
+  2. Second
+
+For emphasis, use HTML tags: <b>important</b>, not **important** or *important*.
+
+━━━ MS TEAMS (Markdown) ━━━
+
+Teams supports standard Markdown:
+  **bold**                — bold
+  *italic*                — italic
+  ~~strikethrough~~       — strikethrough
+  `monospace`             — inline monospace
+  ```code block```        — multi-line code
+  [text](url)             — hyperlink
+  > quoted line           — blockquote
+  - item / * item         — bullet list
+  1. item                 — numbered list
+
+Teams also supports Adaptive Cards for rich content, but for text responses
+use plain Markdown.
+
+━━━ UNIVERSAL RULES (BOTH PLATFORMS) ━━━
+
+- Line breaks: single `\n` creates a new line on both platforms
+- Paragraphs: double `\n\n` creates visible spacing on both
+- Emojis: render natively on both — use freely where appropriate
+- Bullet points: use `•` (unicode U+2022) as plain text on Telegram; `- ` on Teams
+- Numbered lists: use `1.`, `2.`, `3.` as plain text — works on both
+- Indentation: use leading spaces (2 or 4); tab characters may be dropped
+
+━━━ DECISION RULE ━━━
+
+Before generating any formatted output, check SESSION METADATA for `source`:
+  - `source=telegram` → use HTML tags (`<b>`, `<i>`, `<code>`, `<a href=...>`)
+  - `source=teams` → use Markdown (`**bold**`, `*italic*`, `` `code` ``)
+
+If you mix syntaxes (e.g. emit HTML tags on Teams or `**markdown**` on Telegram),
+users see raw syntax characters and the message looks broken. This IS a visible defect.
+
+━━━ COMMON MISTAKES TO AVOID ━━━
+
+WRONG (Telegram): `**bold text**`  → renders as literal `**bold text**`
+RIGHT (Telegram): `<b>bold text</b>`
+
+WRONG (Telegram): `## Header`       → renders as literal `## Header`
+RIGHT (Telegram): `<b>Header</b>` followed by newline
+
+WRONG (both): `---` horizontal rule → renders as literal `---`
+RIGHT (both): blank line or emoji divider (e.g. `━━━━━`)
+
+Model behavior drift: newer models sometimes revert to markdown defaults
+(`**bold**`, `##`, `---`). Force yourself to check before sending — if the
+output contains `**`, `##`, `---`, or raw HTML on Teams, REWRITE it to match
+the platform's actual syntax.

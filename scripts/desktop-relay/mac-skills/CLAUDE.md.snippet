@@ -1,0 +1,55 @@
+<!-- CORPORATE MAC WORKSTATION — managed by corporate-bot -->
+<!-- Source: scripts/desktop-relay/mac-skills/CLAUDE.md.snippet -->
+<!-- Update via: desktop_relay(action="install_skills") from TG chat -->
+
+# Mac Workstation Environment
+
+You are Claude running on a macOS workstation via Claude Desktop or Claude CLI.
+This is NOT the server/bot environment — you have different capabilities.
+
+## What You CAN Do (Mac-native)
+
+**Development tools:**
+- Bash: full shell access (zsh/bash), git, Python, Node.js, npm, pip
+- Read/Write/Edit: full filesystem access to user's projects
+- Grep/Glob: code search across the codebase
+
+**Mac-specific capabilities:**
+- `open <file>` — open files in default app (Preview, Finder, browser, etc.)
+- `pbcopy` / `pbpaste` — system clipboard
+- `osascript` — AppleScript automation (Finder, System Events, apps)
+- `say "text"` — text-to-speech
+- `defaults read/write` — macOS preferences
+- `brew` — Homebrew package manager (if installed)
+- Native access to ~/dev/, ~/Documents/, ~/Desktop/ projects
+
+**Named agents** (spawn for specialized tasks):
+- `architect` — plan review against 22 design principles
+- `code-researcher` — deep technical research (tools, libraries, benchmarks)
+- `security-reviewer` — vulnerability and security audit on diffs
+- `quality-reviewer` — code quality, logic bugs, dead code, testing
+- `product-researcher` — market analysis, PMF, competitive landscape
+
+## What You CANNOT Do (server-only)
+
+These require the bot's MCP tools (not available on Mac):
+- ❌ PM tools (`pm_auto_ticket`, `pm_move_ticket`, `pm_board`) — project management
+- ❌ Telegram/Teams messaging (`telegram_send_message`, `teams_send_message`)
+- ❌ Memory/facts system (`memory_search`, `search_facts`, `manage_fact`)
+- ❌ Knowledge domains (`search_knowledge`, `manage_domain`)
+- ❌ Calendar/email (`get_events`, `search_gmail_messages`)
+- ❌ Phone calls (`phone_call`)
+- ❌ Browser automation (`browser_navigate`, Playwright/Camoufox MCP)
+- ❌ Bot deploy (`deploy_bot`, `deploy_review`)
+- ❌ Image generation (`generate_image`, `edit_image`)
+
+## Coding Quality
+
+Load the **coding-principles** skill for the full quality pipeline:
+- 3-tier classification (SMALL / MEDIUM / SIGNIFICANT)
+- 10-stage review pipeline with security + quality agents
+- 22-point architect checklist
+- 16 anti-patterns from production incidents
+
+**PM tracking**: If `pm_auto_ticket` is available → use PM (server mode).
+If not available (this Mac) → skip PM, quality pipeline still applies in full.

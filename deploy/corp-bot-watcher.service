@@ -1,0 +1,40 @@
+# Corporate Bot Deploy Watcher — systemd service template
+#
+# NOTE: This is a TEMPLATE. The setup wizard (scripts/setup.sh) generates
+# the actual service file with correct paths and project name.
+#
+# Security model:
+#   - Watcher script lives in /opt/<project>-watcher/ (root-owned, not editable by bot)
+#   - Runs as 'botuser' (UID 10001, same as in-container user)
+#   - botuser is in 'docker' group (can manage containers, nothing else)
+#   - Bot's /host-repo mount cannot modify the watcher script
+#
+# Manual install:
+#   1. Create host botuser: sudo useradd -r -s /usr/sbin/nologin -u 10001 -m botuser
+#   2. Add to docker group: sudo usermod -aG docker botuser
+#   3. Install watcher: sudo mkdir -p /opt/PROJNAME-watcher && sudo cp deploy/host-watcher.sh /opt/PROJNAME-watcher/
+#   4. Edit paths below, then:
+#      sudo cp deploy/corp-bot-watcher.service /etc/systemd/system/PROJNAME-watcher.service
+#      sudo systemctl daemon-reload
+#      sudo systemctl enable --now PROJNAME-watcher
+
+[Unit]
+Description=Corporate Bot Deploy Watcher
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=botuser
+Group=docker
+WorkingDirectory=/home/CHANGE_ME/corporate-bot
+ExecStart=/opt/CHANGE_ME-watcher/host-watcher.sh
+Restart=always
+RestartSec=10
+Environment=COMPOSE_DIR=/home/CHANGE_ME/corporate-bot
+Environment=COMPOSE_PROJECT_NAME=CHANGE_ME
+Environment=HOME=/home/botuser
+Environment=GIT_SSH_COMMAND=ssh -i /home/botuser/.ssh/corp_bot_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new
+
+[Install]
+WantedBy=multi-user.target

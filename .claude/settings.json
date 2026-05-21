@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Write(.claude/skills/**)",
+      "Edit(.claude/skills/**)",
+      "Write(./.claude/skills/**)",
+      "Edit(./.claude/skills/**)",
+      "Write(/host-repo/.claude/skills/**)",
+      "Edit(/host-repo/.claude/skills/**)"
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+# Pinned versions — review periodically for security patches
+# Last reviewed: 2026-03-06
+claude-agent-sdk==0.1.56
+anthropic==0.84.0
+fastapi==0.135.1
+uvicorn[standard]==0.41.0
+httpx==0.28.1
+aiosqlite==0.22.1
+Pillow==12.1.1
+python-dotenv==1.2.2
+python-multipart==0.0.27
+pyrotgfork==2.2.17
+pytgcrypto==1.2.12
+google-genai==1.66.0
+python-docx==1.1.2
+langdetect==1.0.9
+pypdf==5.9.0
+openpyxl==3.1.5
+numpy==2.2.3
+flights==0.7.0
+PyJWT[crypto]==2.10.1
+cryptography==44.0.2
+PyYAML==6.0.2
+python-telegram-bot==22.1
+# Dev/test dependencies (included in image for in-container testing)
+pytest==8.3.5
+pytest-asyncio==0.25.3
+pyflakes==3.3.2

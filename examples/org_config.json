@@ -1,0 +1,64 @@
+{
+  "org_name": "Acme Corp",
+  "bot_name": "Acme Assistant",
+  "timezone": "Europe/London",
+  "location": "123 Business Park, London EC2A 1AA",
+
+  "members": {
+    "admins": [
+      {
+        "name": "John Smith",
+        "role": "administrator",
+        "email": "john.smith@acmecorp.com",
+        "telegram_id": 123456789,
+        "telegram_username": "johnsmith",
+        "whatsapp_phone": "447700900001",
+        "is_admin": true
+      },
+      {
+        "name": "Jane Smith",
+        "role": "manager",
+        "emails": ["jane.smith@acmecorp.com"],
+        "telegram_id": 987654321,
+        "whatsapp_phone": "447700900002",
+        "is_admin": false
+      }
+    ],
+    "team_members": [
+      {
+        "name": "Tom",
+        "department": "Engineering",
+        "team": "Backend",
+        "manager": "Jane Smith"
+      },
+      {
+        "name": "Lucy",
+        "department": "Marketing",
+        "note": "Joined Jan 2027"
+      }
+    ],
+    "other": [
+      {
+        "name": "Maria",
+        "role": "contractor"
+      }
+    ]
+  },
+
+  "goals": [
+    "Streamline team coordination and communication",
+    "Keep everyone productive and reduce overhead",
+    "Support project management and task tracking",
+    "Stay on top of deadlines, meetings, and deliverables"
+  ],
+
+  "phone_agent": {
+    "org_name": "Acme Corp",
+    "default_gender": "male"
+  },
+
+  "email": {
+    "primary_address": "john.smith@acmecorp.com",
+    "primary_user_name": "John"
+  }
+}

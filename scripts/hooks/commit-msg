@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+"""Git commit-msg hook: enforce coding pipeline gate completion.
+
+Parses `Ticket: CB-XX` from the commit message, looks up the ticket in PM DB,
+and blocks the commit if required pipeline gates are missing for the tier.
+
+Install: git config core.hooksPath scripts/hooks
+"""
+
+import json
+import re
+import sqlite3
+import sys
+import os
+
+# PM DB path — inside container or on host
+PM_DB = os.environ.get("PM_DB_PATH", "/app/data/pm.db")
+
+# Required gates by tier (mirrors bot/pm/tcd.py)
+REQUIRED_GATES = {
+    "small": ["T0", "SM", "stage_2", "stage_5", "stage_6", "stage_9", "stage_12", "stage_10",
+              "orchestrator"],
+    "medium": ["T0", "SM", "stage_2", "stage_5", "stage_6", "stage_9", "stage_12", "stage_10",
+               "orchestrator"],
+    "significant": [
+        "T0", "SM", "stage_0", "stage_1", "stage_2", "stage_3", "stage_4",
+        "stage_5", "stage_6", "stage_7", "stage_8", "stage_9", "stage_12",
+        "stage_10", "stage_11", "orchestrator",
+    ],
+}
+
+# Optional gates that don't block (skippable)
+OPTIONAL_GATES = {"stage_0"}
+
+
+def main():
+    if len(sys.argv) < 2:
+        sys.exit(0)
+
+    msg_file = sys.argv[1]
+    try:
+        with open(msg_file) as f:
+            msg = f.read()
+    except OSError:
+        sys.exit(0)  # can't read message — don't block
+
+    # Extract ticket reference: "Ticket: CB-XX" or "Ticket: PM-XX"
+    match = re.search(r"Ticket:\s*(?:CB|PM)-(\d+)", msg, re.IGNORECASE)
+    if not match:
+        # No ticket reference — skip check (non-PM commits are allowed)
+        sys.exit(0)
+
+    ticket_number = int(match.group(1))
+
+    # Check if PM DB exists
+    if not os.path.exists(PM_DB):
+        print(f"⚠️  Pipeline gate check: PM DB not found at {PM_DB} — skipping")
+        sys.exit(0)
+
+    try:
+        conn = sqlite3.connect(PM_DB, timeout=5)
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT tier, tcd FROM pm_tickets WHERE ticket_number = ?",
+            (ticket_number,),
+        ).fetchone()
+        conn.close()
+    except Exception as e:
+        print(f"⚠️  Pipeline gate check: DB error — {e}")
+        sys.exit(0)  # DB issues don't block commits
+
+    if not row:
+        print(f"⚠️  Pipeline gate check: ticket CB-{ticket_number} not found — skipping")
+        sys.exit(0)
+
+    tier = row["tier"] or "significant"
+    tcd_raw = row["tcd"]
+
+    if not tcd_raw:
+        # No TCD = no gate tracking = BLOCK for medium/significant
+        if tier in ("medium", "significant"):
+            print(f"\n❌ COMMIT BLOCKED — Pipeline gate enforcement")
+            print(f"   Ticket CB-{ticket_number} (tier: {tier}) has no TCD.")
+            print(f"   Required: create TCD and record pipeline gates before committing.")
+            print(f"   Use mark_gate(tcd, 'stage_X', status='passed') for each stage.\n")
+            sys.exit(1)
+        sys.exit(0)  # small without TCD is allowed
+
+    try:
+        tcd = json.loads(tcd_raw)
+    except (json.JSONDecodeError, TypeError):
+        print(f"⚠️  Pipeline gate check: invalid TCD JSON — skipping")
+        sys.exit(0)
+
+    # Check gates
+    required = REQUIRED_GATES.get(tier, REQUIRED_GATES["significant"])
+    gates = tcd.get("pipeline_gates", {})
+    missing = []
+
+    # Stages that MUST have agent_id evidence for 🔴 (spawned review agents)
+    AGENT_REQUIRED_GATES = {
+        "stage_3", "stage_4", "stage_7", "stage_8", "stage_9", "stage_11",
+    }
+
+    for gate in required:
+        if gate in OPTIONAL_GATES:
+            continue
+        entry = gates.get(gate)
+        if not entry:
+            missing.append(f"  {gate}: ❌ not recorded")
+        elif entry.get("status") not in ("passed", "skipped"):
+            missing.append(f"  {gate}: ❌ {entry.get('status', 'unknown')}")
+        elif (tier == "significant" and gate in AGENT_REQUIRED_GATES
+              and entry.get("status") == "passed"
+              and not entry.get("agent_id") and not entry.get("notes")):
+            # 🔴 review stages must have evidence (agent_id or notes explaining why inline)
+            missing.append(f"  {gate}: ⚠️ passed but no agent evidence (add agent_id or notes)")
+
+    if missing:
+        # Show what's done
+        done = []
+        for gate in required:
+            entry = gates.get(gate)
+            if entry and entry.get("status") in ("passed", "skipped"):
+                icon = "✅" if entry["status"] == "passed" else "⏭️"
+                done.append(f"  {gate}: {icon}")
+
+        print(f"\n❌ COMMIT BLOCKED — Pipeline gate enforcement")
+        print(f"   Ticket CB-{ticket_number} | Tier: {tier}")
+        print(f"\n   Completed gates:")
+        for d in done:
+            print(d)
+        print(f"\n   Missing gates ({len(missing)}):")
+        for m in missing:
+            print(m)
+        print(f"\n   Run the missing stages, then mark_gate(tcd, 'stage_X', status='passed').")
+        print(f"   Or use pm_update_ticket(ticket_id=N, tcd=json.dumps(tcd))\n")
+        sys.exit(1)
+
+    # All gates passed
+    passed_count = sum(1 for g in required if g not in OPTIONAL_GATES)
+    print(f"✅ Pipeline gates: {passed_count}/{passed_count} passed for CB-{ticket_number} ({tier})")
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

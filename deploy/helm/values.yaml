@@ -1,0 +1,103 @@
+# Corporate Bot Helm Chart Values
+# Override these for your deployment
+
+# Image
+image:
+  repository: ghcr.io/your-org/corporate-bot
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Replicas (single instance recommended — session state is not shared)
+replicaCount: 1
+
+# Service
+service:
+  type: ClusterIP
+  port: 8000
+
+# Ingress (for Azure Bot Service webhook)
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: bot.your-company.example.com
+      paths:
+        - path: /api/teams-messages
+          pathType: Prefix
+        - path: /webhooks/github
+          pathType: Prefix
+        - path: /health
+          pathType: Prefix
+  tls:
+    - secretName: bot-tls
+      hosts:
+        - bot.your-company.example.com
+
+# Environment variables (from ConfigMap)
+config:
+  BOT_ENV: production
+  BOT_PORT: "8000"
+  TEAMS_ENABLED: "true"
+  TEAMS_DEFAULT_HARNESS: employee
+  MODEL_PRIMARY: claude-sonnet-4-6
+  LOG_LEVEL: INFO
+
+# Secrets (from Kubernetes Secret — create separately)
+# kubectl create secret generic corporate-bot-secrets \
+#   --from-literal=ANTHROPIC_API_KEY=sk-ant-... \
+#   --from-literal=TEAMS_APP_ID=... \
+#   --from-literal=TEAMS_APP_SECRET=... \
+#   --from-literal=TEAMS_TENANT_ID=... \
+#   --from-literal=TOKEN_ENCRYPTION_KEY=... \
+#   --from-literal=GEMINI_API_KEY=... \
+#   --from-literal=GITHUB_TOKEN=... \
+#   --from-literal=GITHUB_WEBHOOK_SECRET=...
+secretName: corporate-bot-secrets
+
+# Persistent storage
+persistence:
+  enabled: true
+  storageClass: default
+  size: 10Gi
+  # Mounts to /app/data (SQLite DB, domain content, media cache)
+
+# Resources
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 250m
+  limits:
+    memory: 4Gi
+    cpu: 2000m
+
+# Security context (matches Dockerfile — non-root, drop all caps)
+securityContext:
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  capabilities:
+    drop:
+      - ALL
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+# Node scheduling (optional)
+nodeSelector: {}
+tolerations: []
+affinity: {}

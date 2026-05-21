@@ -1,0 +1,7 @@
+ORGANIZATION CONTEXT:
+{base_context}
+
+STRUCTURED FACTS:
+Facts are stored in the database and retrieved via the `search_facts` tool.
+Use search_facts to look up specific information (documents, projects, contacts, etc.).
+Use search_facts with action="list" to see all facts or filter by category.

@@ -1,0 +1,32 @@
+domain:
+  id: eng-channel-docs
+  name: Engineering Channel Files
+  description: >
+    Documents shared in the Engineering team's General channel.
+    Architecture docs, design specs, meeting notes.
+  owner: eng-lead@company.com
+
+  source:
+    type: graph_api
+    team_id: "team-guid-here"
+    channel_id: "channel-guid-here"
+    paths: [""]  # Root of channel files
+    exclude:
+      - "*.tmp"
+      - "~$*"
+
+  indexing:
+    chunking_strategy: markdown_headers
+    chunk_size: 1500
+    chunk_overlap: 200
+    poll_interval_minutes: 30
+
+  access:
+    teams: [engineering]
+    admins: [eng-lead@company.com]
+
+  knowledge:
+    prompt_modules: [deploy, staging]
+    skills: [coding-principles, browser-automation]
+    auto_load_skills: [coding-principles]
+    facts_categories: [infrastructure, deploy]

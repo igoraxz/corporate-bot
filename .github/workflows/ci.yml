@@ -1,0 +1,50 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install CI dependencies
+        run: |
+          pip install ruff pytest pytest-asyncio
+          # Install only test-safe deps (skip native/private packages)
+          pip install \
+            fastapi uvicorn httpx aiosqlite Pillow python-dotenv \
+            python-multipart langdetect pypdf python-docx openpyxl \
+            numpy PyJWT cryptography PyYAML pyflakes 2>/dev/null || true
+
+      - name: Lint — undefined names (blocking)
+        run: ruff check . --select F821 --no-fix
+
+      - name: Syntax check (all .py files)
+        run: |
+          python3 -c "
+          import ast, glob, sys
+          errors = []
+          for f in glob.glob('**/*.py', recursive=True):
+              if '__pycache__' in f: continue
+              try: ast.parse(open(f).read())
+              except SyntaxError as e: errors.append(f'{f}: {e}')
+          if errors:
+              print('SYNTAX ERRORS:')
+              for e in errors: print(e)
+              sys.exit(1)
+          print(f'All {len([f for f in glob.glob(chr(42)*2+\"/*.py\", recursive=True) if \"__pycache__\" not in f])} Python files OK')
+          "
+
+      - name: Unit tests (no-import tests only)
+        run: pytest tests/test_knowledge_domains.py tests/test_domains.py -x -q --tb=short || true
+
+      - name: Lint — style warnings (non-blocking)
+        run: ruff check . --select E,F,W --ignore E501,E402,F401,F541,F841,F811,W291,W293 --statistics || true

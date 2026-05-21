@@ -1,0 +1,100 @@
+# Corporate Bot — Docker Compose
+# Standalone deployment: bot-core + optional Camoufox browser
+# No WA bridge, no org-specific volumes, no staging cross-refs
+
+services:
+  bot-core:
+    build:
+      context: .
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-dev}
+    container_name: ${COMPOSE_PROJECT_NAME:-corporate-bot}
+    restart: unless-stopped
+    init: true  # tini as PID 1 — auto-reaps zombie/orphan child processes
+    ports:
+      - "${BOT_PORT:-8000}:8000"
+      - "${REPORTS_PORT:-8210}:${REPORTS_PORT:-8210}"
+    # Security hardening
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=./seccomp-bwrap.json
+      - apparmor=unconfined
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+    shm_size: '2gb'
+    env_file:
+      - .env
+    environment:
+      - LOG_DIR=/app/logs
+      - TZ=${TZ:-Europe/London}
+      - MEDIA_RETENTION_DAYS=${MEDIA_RETENTION_DAYS:-36135}
+      - CAMOFOX_API_KEY=${CAMOFOX_API_KEY:-}
+    volumes:
+      # Persistent bot data (SQLite DB, domains, tokens, state)
+      - bot-data:/app/data
+      # Persistent logs
+      - bot-logs:/app/logs
+      # Claude Agent SDK sessions
+      - claude-sessions:/home/botuser/.claude
+      # Organization config (editable without rebuild)
+      - ./data/org_config.json:/app/data/org_config.json:ro
+      # Prompt files (editable without rebuild)
+      - ./data/prompts:/app/data/prompts:ro
+      # Knowledge domain configs (editable without rebuild)
+      - ./data/domains:/app/data/domains:ro
+      # CLAUDE.md modules (composable harness content)
+      - ./data/claude_md_modules:/app/data/claude_md_modules:ro
+      # Media cache
+      - media-cache:/app/data/media_cache
+      # SSH deploy key for git push (read-only from host)
+      - ${SSH_KEY_PATH:-/home/botuser/.ssh/id_ed25519}:/home/botuser/.ssh/id_ed25519:ro
+      # Deploy triggers: host watcher reads from here
+      - ./deploy/triggers:/deploy-triggers
+      # Self-upgrade: mount repo for git operations (admin only)
+      - .:/host-repo
+    networks:
+      - default
+      - bot-shared
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Anti-detect browser (optional — for web research, site scraping)
+  camofox-browser:
+    image: ghcr.io/redf0x1/camofox-browser:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-corporate-bot}-camofox
+    restart: unless-stopped
+    init: true  # tini as PID 1 — auto-reaps zombie/orphan child processes
+    profiles: ["browser"]  # Only starts with: docker compose --profile browser up
+    environment:
+      - CAMOFOX_API_KEY=${CAMOFOX_API_KEY:-}
+      - CAMOFOX_HEADLESS=true
+      - CAMOFOX_MAX_TABS=${CAMOFOX_MAX_TABS:-12}
+      - CAMOFOX_SESSION_TIMEOUT=${CAMOFOX_SESSION_TIMEOUT:-0}
+    volumes:
+      - camofox-data:/home/node/.camofox
+    shm_size: '2gb'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9377/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  bot-shared:
+    name: ${BOT_NETWORK:-bot-shared}
+    external: true
+
+volumes:
+  bot-data:
+  bot-logs:
+  claude-sessions:
+  media-cache:
+  camofox-data:

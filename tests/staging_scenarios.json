@@ -1,0 +1,93 @@
+{
+  "_comment": "Lightweight regression suite for staging QA gate. Target: <5min total. Cost: ~$0.30-0.50 per run.",
+  "version": 21,
+  "scenarios": [
+    {
+      "name": "basic_inference",
+      "description": "Core inference + tool calling works. Fast sanity check.",
+      "input": "What is 7+5? Reply with ONLY the number, nothing else.",
+      "is_admin": true,
+      "harness_label": "admin",
+      "expect_tools": ["telegram_send_message"],
+      "expect_text_match_any": true,
+      "expect_text_contains": ["12", "twelve", "Twelve"],
+      "timeout": 60
+    },
+    {
+      "name": "security_gate",
+      "description": "Non-admin bash blocked by RBAC",
+      "input": "Run bash: echo hello",
+      "is_admin": false,
+      "expect_no_tools": ["Bash"],
+      "expect_tools": ["telegram_send_message"],
+      "timeout": 45
+    },
+    {
+      "name": "cb5_teamwork_harness",
+      "description": "CB-5: Teamwork harness assigns teamwork RBAC role — non-admin can send messages and respond",
+      "input": "Reply with exactly: hello",
+      "is_admin": false,
+      "harness_label": "teamwork",
+      "expect_tools": ["telegram_send_message"],
+      "timeout": 60
+    },
+    {
+      "name": "cb5_external_restricted",
+      "description": "CB-5: External harness restricts filesystem — Bash denied for external role",
+      "input": "Run bash: echo 'external_test'",
+      "is_admin": false,
+      "harness_label": "external_chat",
+      "expect_no_tools": ["Bash"],
+      "expect_tools": ["telegram_send_message"],
+      "timeout": 45
+    },
+    {
+      "name": "pm_tools_exist",
+      "description": "PM tools registered and accessible for admin",
+      "input": "Create a test PM project called 'Staging QA Test' with brief 'automated test'. Use the pm_create_project tool.",
+      "is_admin": true,
+      "harness_label": "admin",
+      "expect_tools": ["telegram_send_message"],
+      "expect_text_contains": ["project", "creat", "Project", "PM"],
+      "expect_text_match_any": true,
+      "timeout": 120
+    },
+    {
+      "name": "pm_admin_gate",
+      "description": "PM tools blocked for non-admin (RBAC deny)",
+      "input": "List all PM projects using pm_list_projects tool.",
+      "is_admin": false,
+      "expect_no_tools": ["pm_list_projects"],
+      "expect_tools": ["telegram_send_message"],
+      "timeout": 45
+    },
+    {
+      "name": "cb5_admin_inference_with_harness",
+      "description": "CB-5: Admin harness with default_role=bot_admin — basic tool call works",
+      "input": "What is 100-37? Reply with ONLY the number, nothing else.",
+      "is_admin": true,
+      "harness_label": "admin",
+      "expect_tools": ["telegram_send_message"],
+      "expect_text_match_any": true,
+      "expect_text_contains": ["63", "sixty-three", "Sixty"],
+      "timeout": 60
+    },
+    {
+      "name": "sandbox_pm_blocked",
+      "description": "Non-admin sandbox blocks PM tools",
+      "input": "List all PM projects using pm_list_projects tool.",
+      "is_admin": false,
+      "harness_label": "qa_sandbox_nopm",
+      "harness_config": {
+        "data_scope": "own",
+        "model": "claude-sonnet-4-6",
+        "max_turns": 15,
+        "max_budget_usd": 2,
+        "project_dir": "/app/data/harness-projects/qa_sandbox_nopm"
+      },
+      "expect_no_tools": ["pm_list_projects"],
+      "expect_tools": ["telegram_send_message"],
+      "timeout": 45
+    }
+  ]
+}

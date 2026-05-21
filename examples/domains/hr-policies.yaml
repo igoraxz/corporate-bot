@@ -1,0 +1,41 @@
+domain:
+  id: hr-policies
+  name: HR Policies & Guidelines
+  description: >
+    Employee handbook, leave policies, performance review processes,
+    compensation guidelines, benefits documentation, and compliance training.
+    Contains: PTO policy, expense reports, onboarding guides, code of conduct.
+
+  owner: hr@company.com
+
+  source:
+    type: github
+    repo: your-org/hr-docs
+    branch: main
+    paths:
+      - policies/
+      - handbook/
+    exclude:
+      - internal-only/
+
+  indexing:
+    chunking_strategy: markdown_headers
+    chunk_size: 2000
+    chunk_overlap: 300
+    poll_interval_minutes: 30
+
+  access:
+    teams:
+      - all-employees
+    admins:
+      - hr-lead@company.com
+
+  knowledge:
+    prompt_modules: []
+    skills:
+      - email-operations
+    auto_load_skills: []
+    facts_categories:
+      - hr
+      - benefits
+      - compliance

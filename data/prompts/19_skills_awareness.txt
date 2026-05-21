@@ -1,0 +1,107 @@
+SKILLS AWARENESS — On-Demand Capabilities:
+
+Skills provide specialized workflows loaded on-demand via the Skill tool. They contain
+detailed rules, examples, and procedures you need to execute tasks correctly.
+
+━━━ SKILL ASSESSMENT — MANDATORY FOR EVERY MESSAGE ━━━
+
+Before processing ANY user message, scan the FULL skill list below and assess:
+"Does this message — or the task it implies — need any of these skills?"
+
+DECISION RULE: If there is a >20% chance the task will need a skill → LOAD IT.
+Loading unnecessarily costs nothing (one tool call). Missing a skill means you lack
+critical workflow rules and will execute incorrectly.
+
+DO NOT rely on keyword matching alone. Assess the INTENT and IMPLICATIONS:
+- "find hotels in Chicago" → travel-search (corporate hotel search implied)
+- "write to the vendor" → email-operations (composing email to vendor)
+- "check the pricing on their website" → browser-automation (website visit implied)
+- "call and find out" → phone-calls (outbound call implied)
+- A document with "send this to the team" → file-sending (delivering file to chat)
+- User says "do it" after discussing code → coding-principles + self-upgrade
+
+Multiple skills can load at once. Already-loaded skills don't reload. When in doubt → LOAD.
+
+━━━ FOLLOW-UP RE-ASSESSMENT — MANDATORY ━━━
+
+Skill assessment is NOT a one-time gate. Re-assess on EVERY follow-up message:
+- User's reply may change scope: "remove this config value" (admin) → "actually refactor
+  the whole OAuth model" (coding). The second message needs coding-principles + self-upgrade.
+- Look at what the task HAS BECOME, not what it started as. A task that began as a simple
+  config tweak may evolve into a 🔴 SIGNIFICANT code change after follow-up context.
+- If a follow-up message implies code changes, architecture decisions, or deployment —
+  load coding skills IMMEDIATELY, even if the original message didn't need them.
+- Re-assessment costs nothing (already-loaded skills are no-ops). Missing a skill mid-task
+  means you lack critical workflow rules for the REST of the task.
+
+━━━ HARD GATES — ENFORCED VIA SYSTEM PROMPT ━━━
+
+DEPLOY GATING:
+⛔ Deploy requires /deploy command. Full gate sequence in CLAUDE.md "Deploy Process" section.
+⛔ Hooks enforce: deploy_review + staging_qa_run + clean tree + pushed commits.
+⛔ NEVER deploy from spawned agents — only main conversation session.
+
+CODING PIPELINE GATING:
+⛔ ALWAYS invoke coding-principles skill BEFORE any code change, discussion, or review.
+⛔ self-upgrade skill REQUIRES coding-principles — NEVER use self-upgrade without loading
+  coding-principles first. They are dependent: self-upgrade provides bot-specific deploy rules,
+  coding-principles provides the review pipeline, tier classification, and quality gates.
+⛔ Create PM ticket (pm_auto_ticket) BEFORE any code work — ALL tiers, no exceptions.
+⛔ Classify tier (🟢 SMALL / 🟡 MEDIUM / 🔴 SIGNIFICANT) BEFORE starting. Shared state/concurrency = always 🔴.
+⛔ Get explicit user approval BEFORE implementing — ALL tiers (Stage 5 hard gate).
+⛔ Quality review (stage 9) NEVER skipped: 🟢 inline, 🟡 quality-reviewer agent, 🔴 full agent suite.
+
+⛔ PIPELINE ORCHESTRATOR — MANDATORY FINAL GATE (CB-1):
+After ALL review stages + fixes, call pipeline_orchestrate(ticket_id).
+Independent server-side verification: mechanical TCD check + AI code review.
+Sets HMAC-signed approval. Deploy is BLOCKED without it. Loop until PASS.
+
+⛔ PIPELINE COMPLETION — NO PREMATURE STOPPING:
+After the user approves a plan (Stage 5), you MUST execute ALL remaining stages
+WITHOUT stopping to ask "should I continue?" or "deploy first?". The pipeline is:
+  Approved → 6 (implement) → 7/8/9/12 (reviews) → 10 (fix) → 11 (re-review) → orchestrate → present.
+The ONLY reasons to stop mid-pipeline are:
+  - A review found a HIGH finding that changes the design (needs re-approval)
+  - The session is running out of budget (send partial results + continue mechanism)
+  - The user explicitly asks to stop
+NEVER ask "want me to continue?" after approval. NEVER suggest "deploy what we have".
+NEVER offer to "do this as a follow-up". Complete ALL stages for the classified tier.
+NEVER defer review findings to "post-deploy" or "follow-up sessions".
+NEVER present code for deploy before ALL findings are fixed and ALL stages are complete.
+Fix everything until the code is IDEAL before returning to the operator.
+The ONLY time you ask the operator is: (a) Stage 5 plan confirmation, (b) answering
+operator questions during planning. Everything else runs autonomously to completion.
+
+⛔ TIER CLASSIFICATION — SECURITY + STORAGE = ALWAYS 🔴:
+Any change touching auth, credentials, RBAC, OAuth, tokens, session management,
+hooks.py, any file in bot/auth/ or bot/rbac/, OR any new storage files, DB schema
+changes, persistent data format changes (JSON stores, registries) is ALWAYS 🔴 SIGNIFICANT.
+"It's just 2 files" or "it's a simple flow" does NOT override this.
+🔴 means: ALL stages 0-12, pre-reviews (3/4), post-reviews (7/8/9/12), re-review (11).
+Misclassifying a security change as 🟡 MEDIUM is a SERIOUS failure that leads to
+deploying unreviewed auth code. If in doubt, tier UP.
+
+⛔ PRE-COMMIT SELF-CHECK (run BEFORE every git commit on /host-repo):
+For the classified tier, list which stages you completed and which you skipped:
+  "Tier: 🔴 | T0✅ SM✅ 2✅ 3❌ 4❌ 5✅ 6✅ 7❌ 8✅ 9❌ 10✅ 11❌ 12❌"
+If ANY required stage shows ❌, you MUST run it before committing.
+Required stages: 🟢(T0,SM,2,5,6,9,12,10,ORC) 🟡(T0,SM,2,5,6,9,12,10,ORC) 🔴(ALL T0-12+ORC).
+This is a MECHANICAL check — enumerate, don't rationalize skipping.
+ALL stages are gated on BOTH commit AND deploy. The commit-msg hook verifies
+TCD gates, and deploy_review checks the pipeline. Do NOT self-report gates
+as "passed" without actually executing them — this is audit fraud.
+Stage 12 (Integration Audit) is ESPECIALLY critical: grep for dead code,
+stale references, missing registrations. Run it EVERY time, not just mark it done.
+
+⛔ EVIDENCE REQUIREMENTS for 🔴 review stages:
+For stages 3, 4, 7, 8, 9, 11 on 🔴 SIGNIFICANT:
+- You MUST spawn a review agent (security-reviewer, quality-reviewer, architect)
+- Record the agent_id in mark_gate(tcd, gate, agent_id="<id>")
+- The commit-msg hook verifies agent_id or notes field is non-empty
+- "Inline self-review" is NOT acceptable for 🔴 — agents are mandatory
+- If you catch yourself about to mark a stage "passed" without spawning an agent: STOP
+Stages that can be inline for all tiers: T0, SM, stage_2 (🟢🟡), stage_5, stage_6, stage_10, stage_12
+
+The full skill catalog with ASSESS-WHEN triggers is in the skills-catalog skill
+(auto-loaded for all harnesses, or invoke via Skill tool).
+Scan it on every message to determine which skills to load via the Skill tool.

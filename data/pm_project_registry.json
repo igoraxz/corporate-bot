@@ -1,0 +1,8 @@
+{
+  "Corporate Bot": {
+    "project_id": 2,
+    "key": "CB",
+    "description": "Bot self-upgrade \u2014 all bot code changes tracked here",
+    "note": "This is the CANONICAL project for bot development. Always use project_id=2 / project_name=\"Corporate Bot\" for self-upgrade tickets."
+  }
+}

@@ -1,0 +1,75 @@
+# Staging compose override — see docs/ORCHESTRATION.md for full setup guide.
+#
+# Usage (all values derive from COMPOSE_PROJECT_NAME in .env):
+#   cd /home/botuser/${COMPOSE_PROJECT_NAME}-staging
+#   BOT_PORT=<staging_port> docker compose \
+#     -p ${COMPOSE_PROJECT_NAME}-staging \
+#     -f docker-compose.yml -f docker-compose.staging.yml \
+#     up -d --build bot-core
+#
+# Naming convention: prod container = ${COMPOSE_PROJECT_NAME}
+#   staging container = ${COMPOSE_PROJECT_NAME}-staging (set via -p flag)
+# Prerequisites: docker network create ${BOT_NETWORK:-bot-shared}
+
+services:
+  bot-core:
+    # -p flag sets COMPOSE_PROJECT_NAME to <name>-staging, so use it directly
+    container_name: ${COMPOSE_PROJECT_NAME:-corporate-bot-staging}
+    ports: !override []  # No host ports — staging accessed via Docker network only
+    env_file:
+      - .env
+      - .env.staging
+    depends_on: {}  # No camofox in staging
+    networks:
+      - default
+      - bot-shared
+    volumes:
+      # Isolated staging volumes (never touch prod data)
+      - staging-bot-data:/app/data
+      - staging-bot-logs:/app/logs
+      - staging-claude-sessions:/home/botuser/.claude
+      - staging-media-cache:/app/data/media_cache
+      # Read-only shared config (same prompts/config as prod)
+      - ./data/prompts:/app/data/prompts:ro
+      - ./data/claude_md_modules:/app/data/claude_md_modules:ro
+      - ./data/org_config.json:/app/data/org_config.json:ro
+      # Google creds (read-only in staging — no token refresh writes)
+      - ./data/google-workspace-creds:/app/data/google-workspace-creds:ro
+      # Host repo (read-only — staging clone, not prod repo)
+      - .:/host-repo:ro
+      # Prod OAuth credentials (read-only for auto-copy at startup)
+      - prod-claude-sessions:/prod-claude:ro
+      # Prod bot-data (read-only — for OAuth profile sync on startup)
+      - prod-bot-data:/prod-data:ro
+
+  # Override camofox-browser to no-op in staging.
+  # Can't use profiles (makes them "undefined" → breaks bot-core depends_on).
+  # Instead, override to alpine + instant exit so they're defined but harmless.
+  camofox-browser:
+    image: alpine:3.20
+    entrypoint: ["true"]
+    restart: "no"
+    volumes: []
+    ports: []
+    depends_on: {}
+
+networks:
+  bot-shared:
+    name: ${BOT_NETWORK:-bot-shared}
+    external: true
+
+volumes:
+  staging-bot-data:
+    driver: local
+  staging-bot-logs:
+    driver: local
+  staging-claude-sessions:
+    driver: local
+  staging-media-cache:
+    driver: local
+  prod-claude-sessions:
+    name: ${PROD_PROJECT_NAME:-corporate-bot}_claude-sessions
+    external: true
+  prod-bot-data:
+    name: ${PROD_PROJECT_NAME:-corporate-bot}_bot-data
+    external: true

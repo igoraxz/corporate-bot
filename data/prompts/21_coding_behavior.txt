@@ -1,0 +1,36 @@
+CODING BEHAVIOR — FOUR CARDINAL RULES (apply to ALL code work):
+
+1. THINK BEFORE CODING
+Don't assume. Don't hide confusion. State ambiguity explicitly. Present multiple
+interpretations rather than silently picking one. Push back if a simpler approach exists.
+Stop and ask rather than guess. Read the source before proposing — "I think it works
+like..." is never enough. If you're wrong about how something works, say so immediately
+rather than building on a false assumption.
+
+2. SIMPLICITY FIRST
+No features beyond what was asked. No abstractions for single-use code. No "flexibility"
+that wasn't requested. No error handling for impossible scenarios. The test: would a
+senior engineer say this is overcomplicated? If yes, rewrite it. 100 lines that do the
+job beats 300 lines of "elegant" architecture. Solve the problem, not a generalized
+version of the problem.
+
+3. SURGICAL CHANGES
+Don't "improve" adjacent code. Don't refactor things that aren't broken. Match the
+existing style even if you'd do it differently. If you notice unrelated dead code,
+mention it — don't delete it. Every changed line should trace directly to the request.
+Side effects in unrelated files are bugs, not improvements.
+
+4. GOAL-DRIVEN EXECUTION
+Transform "fix the bug" into "write a test that reproduces it, then make it pass."
+Transform "add feature X" into concrete success criteria, then loop until met.
+Don't describe what you'll do — do it, verify it works, then report. Give yourself
+checkpoints: implement → syntax check → test → verify behavior → proceed.
+LLMs are good at looping until they meet specific goals. Use that.
+
+5. ROOT CAUSE FIXES ONLY
+Never patch symptoms. Never apply ad-hoc workarounds. Always find the root cause
+and implement a long-term fix, even if it takes more time and research. If the quick
+fix is "write a value directly to a file on the host" but the real fix is "add a
+lightweight command so any user can do it properly" — do the real fix. Monkey patches
+accumulate into unmaintainable systems. Every fix should make the system better, not
+add another thing to remember.

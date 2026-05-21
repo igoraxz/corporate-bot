@@ -1,0 +1,60 @@
+domain:
+  id: eng-runbooks
+  name: Engineering Runbooks
+  description: >
+    Deployment guides, operational runbooks, incident response procedures,
+    and infrastructure documentation for the engineering team.
+    Contains: deploy pipelines, monitoring setup, database operations,
+    scaling procedures, security protocols.
+
+  owner: platform-team@company.com
+
+  source:
+    type: github
+    repo: your-org/eng-runbooks
+    branch: main
+    paths:
+      - docs/
+      - runbooks/
+    exclude:
+      - drafts/
+      - .github/
+
+  indexing:
+    chunking_strategy: markdown_headers
+    chunk_size: 1500
+    chunk_overlap: 200
+    poll_interval_minutes: 5
+
+  access:
+    teams:
+      - engineering
+      - sre
+      - devops
+    admins:
+      - platform-lead@company.com
+      - cto@company.com
+
+  knowledge:
+    prompt_modules:
+      - deploy
+      - staging
+      - pitfalls
+    skills:
+      - browser-automation
+      - coding-principles
+    auto_load_skills:
+      - coding-principles
+    facts_categories:
+      - infrastructure
+      - deploy
+      - monitoring
+    essential_docs:                         # Always summarized in hot context
+      - docs/deploy-pipeline.md
+      - runbooks/incident-response.md
+    hot_context_budget: 3000                # Max chars for this domain's hot summary
+    custom_instructions: |
+      When discussing deployment procedures, always reference the specific
+      runbook document. Verify commands against the latest version before
+      suggesting them to users.
+    facts_visible: true

@@ -1,0 +1,90 @@
+{
+  "_comment": "Skill dependency manifest — maps auto-loaded skills to their source file dependencies. Used by deploy_review to detect stale docs.",
+  "modules": {
+    "bot-architecture": {
+      "file": ".claude/skills/bot-architecture/SKILL.md",
+      "depends_on": ["main.py", "config.py", "bot/agent.py", "bot/hooks.py", "bot/harness.py", "bot/mcp/", "bot/pm/", "bot/relay/", "bot/core/", "integrations/"],
+      "symbols": ["ClientPool", "Harness", "PersistentQueue", "AccessContext"]
+    },
+    "bot-patterns": {
+      "file": ".claude/skills/bot-patterns/SKILL.md",
+      "depends_on": ["bot/agent.py", "bot/hooks.py", "bot/harness.py", "bot/config_store.py", "bot/mcp/__init__.py", "bot/pipeline/handlers.py", "bot/pipeline/dispatch.py", "bot/pipeline/streaming.py", "bot/pipeline/task_queue.py", "integrations/telegram.py"],
+      "symbols": ["JsonConfigStore", "SESSION_TG_TOOLS", "SEND_TOOLS", "build_hooks", "_session_state"]
+    },
+    "bot-coding-rules": {
+      "file": ".claude/skills/bot-coding-rules/SKILL.md",
+      "depends_on": [],
+      "symbols": []
+    },
+    "bot-features": {
+      "file": ".claude/skills/bot-features/SKILL.md",
+      "depends_on": ["bot/agent.py", "bot/hooks.py", "bot/storage/rag.py", "bot/storage/media.py", "bot/storage/memory.py", "bot/prompts.py", "bot/md_to_tg_html.py", "bot/relay/ux.py", "bot/pm/"],
+      "symbols": ["_split_message", "strip_facts_update", "all_text_blocks"]
+    },
+    "bot-pitfalls": {
+      "file": ".claude/skills/bot-pitfalls/SKILL.md",
+      "depends_on": ["bot/mcp/telegram.py", "bot/mcp/__init__.py", "bot/mcp_config.py", "bot/mcp_size_guard.py", "integrations/telegram.py"],
+      "symbols": ["_coerce_integer_schemas", "_safe_int"]
+    },
+    "bot-deploy": {
+      "file": ".claude/skills/bot-deploy/SKILL.md",
+      "depends_on": ["bot/mcp/deploy.py", "bot/hooks.py"],
+      "symbols": ["deploy_bot", "deploy_review", "staging_qa_run", "deploy_status", "mark_deploy_review_passed"]
+    },
+    "bot-staging": {
+      "file": ".claude/skills/bot-staging/SKILL.md",
+      "depends_on": ["bot/pipeline/staging.py", "bot/mcp/deploy.py", "docker-compose.staging.yml"],
+      "symbols": ["staging_buffer_response", "staging_buffer_tool_call", "test_inject"]
+    },
+    "bot-backup": {
+      "file": ".claude/skills/bot-backup/SKILL.md",
+      "depends_on": ["scripts/backup.sh", "scripts/restore.sh"],
+      "symbols": []
+    },
+    "bot-commands": {
+      "file": ".claude/skills/bot-commands/SKILL.md",
+      "depends_on": ["bot/commands.py", "bot/command_registry.py", "bot/mcp/services.py"],
+      "symbols": ["deploy_bot", "switch_model", "switch_oauth", "manage_harness", "usage_report", "_check_command_access"]
+    },
+    "media-guide": {
+      "file": ".claude/skills/media-guide/SKILL.md",
+      "depends_on": ["bot/storage/media.py", "bot/storage/media_cache.py", "integrations/gemini.py"],
+      "symbols": ["describe_media", "transcribe_voice", "search_media"]
+    },
+    "skills-catalog": {
+      "file": ".claude/skills/skills-catalog/SKILL.md",
+      "depends_on": [".claude/skills/"],
+      "symbols": []
+    },
+    "ms365-guide": {
+      "file": ".claude/skills/ms365-guide/SKILL.md",
+      "depends_on": ["bot/mcp_config.py"],
+      "symbols": ["ms365"]
+    },
+    "todo-guide": {
+      "file": ".claude/skills/todo-guide/SKILL.md",
+      "depends_on": ["bot/storage/facts.py"],
+      "symbols": ["manage_fact", "search_facts"]
+    },
+    "proactive-guide": {
+      "file": ".claude/skills/proactive-guide/SKILL.md",
+      "depends_on": ["bot/scheduler.py"],
+      "symbols": ["DAILY_PROACTIVE"]
+    },
+    "preference-learning": {
+      "file": ".claude/skills/preference-learning/SKILL.md",
+      "depends_on": ["bot/storage/facts.py", "bot/storage/memory.py"],
+      "symbols": ["FACTS_UPDATE", "memory_search"]
+    },
+    "project-management": {
+      "file": ".claude/skills/project-management/SKILL.md",
+      "depends_on": ["bot/pm/"],
+      "symbols": ["pm_auto_ticket", "pm_board", "pm_run_ticket", "pm_run_sprint"]
+    },
+    "rich-content": {
+      "file": ".claude/skills/rich-content/SKILL.md",
+      "depends_on": ["bot/reports.py"],
+      "symbols": ["save_report"]
+    }
+  }
+}

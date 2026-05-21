@@ -1,0 +1,32 @@
+domain:
+  id: company-policies
+  name: Company Policies
+  description: >
+    Corporate policies, compliance documents, and HR guidelines
+    stored in the company SharePoint site.
+  owner: compliance@company.com
+
+  source:
+    type: graph_api
+    site_id: "contoso.sharepoint.com,guid1,guid2"  # SharePoint site ID
+    paths:
+      - Policies
+      - Compliance
+    exclude:
+      - "*/drafts/*"
+
+  indexing:
+    chunking_strategy: markdown_headers
+    chunk_size: 2000
+    chunk_overlap: 300
+    poll_interval_minutes: 60
+
+  access:
+    teams: [all-employees]
+    admins: [compliance-lead@company.com]
+
+  knowledge:
+    prompt_modules: []
+    skills: [email-operations]
+    auto_load_skills: []
+    facts_categories: [compliance, hr]

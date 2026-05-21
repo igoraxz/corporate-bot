@@ -1,0 +1,125 @@
+{
+  "_comment": "Corporate bot staging QA scenarios. Tests: Teams webhook, knowledge domains, permissions, SSO, audit. Target: <8min total.",
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "health_check",
+      "name": "Health endpoint responds",
+      "text": "Check bot health status",
+      "timeout": 30,
+      "is_admin": true,
+      "expect_text_contains": ["ok"]
+    },
+    {
+      "id": "domain_register",
+      "name": "Register a test knowledge domain",
+      "text": "Use manage_domain to register a domain: id='qa-test-domain', name='QA Test Domain', description='Testing domain for staging QA'",
+      "timeout": 90,
+      "is_admin": true,
+      "expect_tools": ["manage_domain"],
+      "expect_text_contains": ["qa-test-domain"]
+    },
+    {
+      "id": "domain_index",
+      "name": "Index document into test domain",
+      "text": "Use index_document to add this to qa-test-domain with path 'test.md': '# Test Document\n\nThis is a test document about Kubernetes deployment.\n\n## Steps\n\n1. Build Docker image\n2. Push to ECR\n3. Apply Helm chart\n4. Verify pods are running\n\n## Troubleshooting\n\nIf pods crash, check logs with kubectl logs.'",
+      "timeout": 120,
+      "is_admin": true,
+      "expect_tools": ["index_document"],
+      "expect_text_contains": ["chunk"]
+    },
+    {
+      "id": "domain_search",
+      "name": "Search knowledge finds indexed content",
+      "text": "Use search_knowledge to find information about 'Kubernetes deployment steps'",
+      "timeout": 90,
+      "is_admin": true,
+      "expect_tools": ["search_knowledge"],
+      "expect_text_contains": ["Kubernetes", "Deploy"]
+    },
+    {
+      "id": "domain_list",
+      "name": "List domains shows registered domain",
+      "text": "Use manage_domain action=list to show all domains",
+      "timeout": 60,
+      "is_admin": true,
+      "expect_tools": ["manage_domain"],
+      "expect_text_contains": ["qa-test-domain"]
+    },
+    {
+      "id": "permission_nonadmin_blocked",
+      "name": "Non-admin cannot use manage_domain",
+      "text": "Use manage_domain action=delete domain_id=qa-test-domain",
+      "timeout": 60,
+      "is_admin": false,
+      "expect_text_not_contains": ["success", "deleted"]
+    },
+    {
+      "id": "basic_conversation",
+      "name": "Basic chat works for employees",
+      "text": "What can you help me with?",
+      "timeout": 60,
+      "is_admin": false,
+      "expect_text_contains": ["help"]
+    },
+    {
+      "id": "domain_health",
+      "name": "Domain health check",
+      "text": "Use manage_domain action=health to check domain system health",
+      "timeout": 60,
+      "is_admin": true,
+      "expect_tools": ["manage_domain"],
+      "expect_text_contains": ["total_domains"]
+    },
+    {
+      "id": "harness_domains_field",
+      "name": "Harness shows knowledge_domains field",
+      "text": "Show all harness configurations",
+      "timeout": 60,
+      "is_admin": true,
+      "expect_text_contains": ["harness"]
+    },
+    {
+      "id": "domain_search_employee",
+      "name": "Employee can search knowledge domains",
+      "text": "Use search_knowledge to search for 'Kubernetes deployment' across all domains you have access to",
+      "timeout": 90,
+      "is_admin": false,
+      "expect_tools": ["search_knowledge"],
+      "expect_text_contains": ["Kubernetes"]
+    },
+    {
+      "id": "permission_register_blocked",
+      "name": "Employee cannot register new domain",
+      "text": "Use manage_domain action=register to register a domain: id='hacked-domain', name='Unauthorized Domain', description='This should fail'",
+      "timeout": 60,
+      "is_admin": false,
+      "expect_text_not_contains": ["registered", "success", "hacked-domain"]
+    },
+    {
+      "id": "knowledge_composition",
+      "name": "Multi-domain chat gets combined modules",
+      "text": "List my currently active knowledge domains and tell me what skills and prompt modules are available to me in this session",
+      "timeout": 90,
+      "is_admin": true,
+      "expect_text_contains": ["domain"]
+    },
+    {
+      "id": "fact_domain_routing",
+      "name": "FACTS_UPDATE with domain field routes correctly",
+      "text": "Remember this infrastructure fact for the qa-test-domain: The staging cluster uses Helm 3.14 with ArgoCD for GitOps deployment. Store it as a fact with domain=qa-test-domain.",
+      "timeout": 90,
+      "is_admin": true,
+      "expect_text_not_contains": ["error", "failed"]
+    },
+    {
+      "id": "domain_delete_cleanup",
+      "name": "Delete test domain (cleanup)",
+      "text": "Use manage_domain action=delete domain_id=qa-test-domain",
+      "timeout": 60,
+      "is_admin": true,
+      "expect_tools": ["manage_domain"],
+      "expect_text_contains": ["deleted"]
+    }
+  ]
+}
